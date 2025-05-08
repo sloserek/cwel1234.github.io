@@ -1,4 +1,3 @@
-
 body .bottom_bar{
     z-index: 1;
 }
@@ -62,6 +61,8 @@ body .bottom_bar{
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: max-content max-content;
+    margin-bottom: 8px;
+    margin-top: 1mm;
 }
 
 .flag_video{
@@ -548,4 +549,3 @@ body .bottom_bar{
 .page_3_open .page_3{
     bottom: 0;
 }
-
