@@ -1,4 +1,57 @@
 
+const themeToggle = document.querySelector('.theme-toggle');
+const themePanel = document.querySelector('.theme-panel');
+
+themeToggle.addEventListener('mouseenter', () => {
+    themePanel.classList.add('active');
+});
+
+themePanel.addEventListener('mouseleave', () => {
+    themePanel.classList.remove('active');
+});
+
+document.querySelectorAll('.theme-option').forEach(option => {
+    option.addEventListener('click', () => {
+        // Usuń aktywną klasę z wszystkich opcji
+        document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+        
+        // Dodaj aktywną klasę do klikniętej opcji
+        option.classList.add('active');
+        
+        // Zastosuj motyw
+        const theme = option.getAttribute('data-theme');
+        applyTheme(theme);
+    });
+});
+
+function applyTheme(theme) {
+    const root = document.documentElement;
+    
+    switch(theme) {
+        case 'dark':
+            root.style.setProperty('--main-color', '#ffffff');
+            document.body.style.background = '#1a1a1a';
+            break;
+        case 'neon':
+            root.style.setProperty('--main-color', '#00ff00');
+            document.body.style.backgroundColor = '#000000';
+            document.querySelectorAll('.theme-option').forEach(opt => {
+                opt.style.animation = 'glow 2s infinite';
+            });
+            break;
+        case 'gradient':
+            document.body.style.background = 'linear-gradient(45deg, #ff6b6b, #4ecdc4)';
+            root.style.setProperty('--main-color', '#ffffff');
+            break;
+        default:
+            root.style.setProperty('--main-color', 'rgb(41, 41, 41)');
+            document.body.style.backgroundColor = 'white';
+            document.querySelectorAll('.theme-option').forEach(opt => {
+                opt.style.animation = 'none';
+            });
+    }
+}
+
 var selector = document.querySelector(".selector_box");
 selector.addEventListener('click', () => {
     if (selector.classList.contains("selector_open")){
@@ -25,68 +78,154 @@ document.querySelectorAll(".selector_option").forEach((option) => {
 
 var upload = document.querySelector(".upload");
 
-var imageInput = document.createElement("input");
-imageInput.type = "file";
-imageInput.accept = ".jpeg,.png,.gif";
-
 document.querySelectorAll(".input_holder").forEach((element) => {
-
     var input = element.querySelector(".input");
     input.addEventListener('click', () => {
         element.classList.remove("error_shown");
     })
-
 });
 
-upload.addEventListener('click', () => {
-    imageInput.click();
-    upload.classList.remove("error_shown")
+const input = document.querySelector("#image");
+const previewModal = document.querySelector('.image-preview-modal');
+const previewImage = document.querySelector('.preview-image');
+const closePreview = document.querySelector('.close-preview');
+const fileUpload = document.querySelector("#file-upload");
+
+fileUpload.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const response = await fetch('https://api.imgur.com/3/image', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Client-ID 546c25a59c58ad7'
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            input.value = data.data.link;
+            previewImage.src = data.data.link;
+            previewModal.style.display = 'flex';
+        } else {
+            alert('Błąd podczas przesyłania zdjęcia');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Błąd podczas przesyłania zdjęcia');
+    }
 });
 
-imageInput.addEventListener('change', (event) => {
-
-    upload.classList.remove("upload_loaded");
-    upload.classList.add("upload_loading");
-
-    upload.removeAttribute("selected")
-
-    var file = imageInput.files[0];
-    var data = new FormData();
-    data.append("image", file);
-
-    fetch('	https://api.imgur.com/3/image' ,{
-        method: 'POST',
-        headers: {
-            'Authorization': 'Client-ID 04ef370e26a3cb0'
-        },
-        body: data
-    })
-    .then(result => result.json())
-    .then(response => {
+input.addEventListener('input', (event) => {
+    const imgurUrl = event.target.value;
+    if (imgurUrl.includes('imgur.com')) {
+        // Clear previous image from localStorage
+        localStorage.removeItem('userImage');
+        input.setAttribute("selected", imgurUrl);
         
-        var url = response.data.link;
-        upload.classList.remove("error_shown")
-        upload.setAttribute("selected", url);
-        upload.classList.add("upload_loaded");
-        upload.classList.remove("upload_loading");
-        upload.querySelector(".upload_uploaded").src = url;
+        // Show preview
+        previewImage.src = imgurUrl;
+        previewModal.style.display = 'flex';
+    }
+});
 
-    })
+closePreview.addEventListener('click', () => {
+    previewModal.style.display = 'none';
+});
 
-})
+previewModal.addEventListener('click', (e) => {
+    if (e.target === previewModal) {
+        previewModal.style.display = 'none';
+    }
+});
+
+// Listy przykładowych danych
+const randomMaleSurnames = ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kowalczyk", "Kamiński", "Lewandowski", "Zieliński", "Szymański", "Woźniak"];
+const randomFemaleSurnames = ["Kowalska", "Nowak", "Wiśniewska", "Wójcik", "Kowalczyk", "Kamińska", "Lewandowska", "Zielińska", "Szymańska", "Woźniak"];
+const randomCities = ["Warszawa", "Kraków", "Łódź", "Wrocław", "Poznań", "Gdańsk", "Szczecin", "Bydgoszcz", "Lublin", "Katowice"];
+const randomStreets = ["Mickiewicza", "Słowackiego", "Kościuszki", "Piłsudskiego", "Sienkiewicza", "Reymonta", "Konopnickiej", "Prusa", "Wyspiańskiego"];
+
+function getRandomElement(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+function generateRandomPostcode() {
+    return String(Math.floor(Math.random() * 90 + 10)) + "-" + String(Math.floor(Math.random() * 900 + 100));
+}
+
+document.querySelector(".clear-btn").addEventListener('click', () => {
+    document.querySelectorAll(".input_holder").forEach((element) => {
+        var input = element.querySelector(".input");
+        input.value = '';
+    });
+    
+    document.querySelectorAll(".date_input").forEach((element) => {
+        element.value = '';
+    });
+    
+    // Clear all localStorage data including image
+    localStorage.clear();
+    localStorage.clear();
+});
+
+document.querySelector(".generate-btn").addEventListener('click', () => {
+    document.querySelectorAll(".input_holder").forEach((element) => {
+        var input = element.querySelector(".input");
+        let randomValue = "";
+        switch(input.id) {
+            case "surname":
+                randomValue = sex === "m" ? getRandomElement(randomMaleSurnames) : getRandomElement(randomFemaleSurnames);
+                break;
+            case "nationality":
+                randomValue = "POLSKA";
+                break;
+            case "familyName":
+                randomValue = sex === "m" ? getRandomElement(randomMaleSurnames) : getRandomElement(randomFemaleSurnames);
+                break;
+            case "fathersFamilyName":
+                randomValue = getRandomElement(randomMaleSurnames);
+                break;
+            case "mothersFamilyName":
+                randomValue = getRandomElement(randomFemaleSurnames);
+                break;
+            case "birthPlace":
+                randomValue = getRandomElement(randomCities);
+                break;
+            case "countryOfBirth":
+                randomValue = "POLSKA";
+                break;
+            case "adress1":
+                randomValue = "ul. " + getRandomElement(randomStreets) + " " + Math.floor(Math.random() * 100 + 1);
+                break;
+            case "adress2":
+                randomValue = generateRandomPostcode();
+                break;
+            case "city":
+                randomValue = getRandomElement(randomCities);
+                break;
+        }
+        if (randomValue && input.id !== "name") {
+            input.value = randomValue;
+        }
+    });
+});
 
 document.querySelector(".go").addEventListener('click', () => {
-
     var empty = [];
-
     var params = new URLSearchParams();
-
     params.set("sex", sex)
-    if (!upload.hasAttribute("selected")){
-        empty.push(upload);
-        upload.classList.add("error_shown")
-    }else{
-        params.set("image", upload.getAttribute("selected"))
+    
+    const imageInput = document.querySelector("#image");
+    if (!imageInput.value || !imageInput.value.includes('imgur.com')){
+        empty.push(imageInput.parentElement);
+        imageInput.parentElement.classList.add("error_shown");
+    } else {
+        params.set("image", imageInput.value);
     }
 
     var birthday = "";
@@ -109,25 +248,20 @@ document.querySelector(".go").addEventListener('click', () => {
     }
 
     document.querySelectorAll(".input_holder").forEach((element) => {
-
         var input = element.querySelector(".input");
-
-        if (isEmpty(input.value)){
+        if (isEmpty(input.value)) {
             empty.push(element);
             element.classList.add("error_shown");
-        }else{
-            params.set(input.id, input.value)
+        } else {
+            params.set(input.id, input.value);
         }
-
-    })
+    });
 
     if (empty.length != 0){
         empty[0].scrollIntoView();
     }else{
-
         forwardToId(params);
     }
-
 });
 
 function isEmpty(value){
@@ -138,9 +272,52 @@ function isEmpty(value){
 }
 
 function forwardToId(params){
+    const imageData = params.get('image');
+    
+    if (imageData) {
+        localStorage.setItem('userImage', imageData);
+        params.delete('image');
+    }
+    
+    // Save form data to localStorage
+    document.querySelectorAll(".input_holder").forEach((element) => {
+        const input = element.querySelector(".input");
+        if (input && input.value) {
+            localStorage.setItem(input.id, input.value);
+        }
+    });
+    
+    location.href = "./id.html?" + params.toString();
+}
 
-    location.href = "/id?" + params
+// Load saved form data when page loads
+window.addEventListener('load', () => {
+    document.querySelectorAll(".input_holder").forEach((element) => {
+        const input = element.querySelector(".input");
+        if (input && localStorage.getItem(input.id)) {
+            input.value = localStorage.getItem(input.id);
+        }
+    });
+});
 
+function sendTo(page) {
+    switch(page) {
+        case 'home':
+            location.href = "home.html";
+            break;
+        case 'documents':
+            location.href = "documents.html";
+            break;
+        case 'services':
+            location.href = "services.html";
+            break;
+        case 'qr':
+            location.href = "qr.html";
+            break;
+        case 'more':
+            location.href = "more.html";
+            break;
+    }
 }
 
 var guide = document.querySelector(".guide_holder");
